@@ -1,0 +1,65 @@
+name: Voice trainer (web)
+
+# Builds Praat's analysis core to WebAssembly, tests it, and publishes the
+# in-browser voice trainer in web/ to GitHub Pages.
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: voice-trainer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.10
+          actions-cache-folder: emsdk-cache
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build Praat to WebAssembly
+        run: make -C web/wasm -j"$(nproc)"
+
+      - name: Test the WebAssembly module
+        run: node --test web/test/*.test.mjs
+
+      - name: Stamp the service worker with the commit
+        run: sed -i "s/const VERSION = 'dev';/const VERSION = '${GITHUB_SHA::12}';/" web/public/sw.js
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/public
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
