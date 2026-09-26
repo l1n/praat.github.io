@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tessitura · Voice Trainer</title>
+  <meta name="description" content="A private, in-browser voice training app powered by Praat. Real-time pitch and resonance feedback, guided exercises, detailed voice analysis and progress tracking. Your voice never leaves your device.">
+  <meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/app.css">
+  <script>
+    // Apply the saved theme before first paint to avoid a flash.
+    try {
+      const s = JSON.parse(localStorage.getItem('tessitura.settings.v1') || '{}');
+      if (s.theme === 'light' || s.theme === 'dark') document.documentElement.dataset.theme = s.theme;
+    } catch (e) {}
+  </script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/live" aria-label="Tessitura home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--accent)"/><path d="M6 19c2.5 0 3-7 5.5-7s3 10 5.5 10 3-13 5.5-13 2 6 3.5 6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Tessitura<small>voice trainer · powered by Praat</small></span>
+    </a>
+    <nav class="tabs" aria-label="Main">
+      <a class="tab" href="#/live" data-route="live"></a>
+      <a class="tab" href="#/practice" data-route="practice"></a>
+      <a class="tab" href="#/analyze" data-route="analyze"></a>
+      <a class="tab" href="#/progress" data-route="progress"></a>
+      <a class="tab" href="#/settings" data-route="settings"></a>
+    </nav>
+  </header>
+  <main id="view" tabindex="-1">
+    <noscript><p>Tessitura needs JavaScript and WebAssembly to analyse your voice.</p></noscript>
+  </main>
+  <footer class="site">
+    Analysis by <a href="https://www.praat.org" target="_blank" rel="noopener">Praat</a> (Paul Boersma &amp; David Weenink), compiled to WebAssembly.
+    Everything runs on your device; no audio is uploaded. Free software under the
+    <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener">GPL v3</a> ·
+    <a href="https://github.com/l1n/praat.github.io/tree/master/web" target="_blank" rel="noopener">source</a>.
+  </footer>
+</body>
+</html>

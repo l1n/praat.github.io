@@ -1,0 +1,78 @@
+name: Voice trainer (web)
+
+# Builds Praat's analysis core to WebAssembly, tests it, and publishes the
+# in-browser voice trainer in web/ to GitHub Pages.
+
+# Every push is built and tested (the result also shows on any open pull request).
+# Pushes to master and to the development branch below are deployed; the
+# github-pages environment must allow both branches (Settings → Environments).
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: voice-trainer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # The WebAssembly module only changes when Praat's sources, the wasm build files or the
+      # Emscripten version change. Front-end-only pushes reuse the cached module and skip the
+      # ~6 minute compile. (The header-only directories are hashed because praat_web.cpp and the
+      # libraries include from them.)
+      - name: Restore the WebAssembly module
+        id: wasm-cache
+        uses: actions/cache@v4
+        with:
+          path: web/public/wasm
+          key: praat-wasm-emsdk-6.0.10-${{ hashFiles('web/wasm/**', 'melder/**', 'kar/**', 'sys/**', 'dwsys/**', 'stat/**', 'fon/**', 'LPC/**', 'dwtools/**', 'foned/**', 'EEG/**', 'external/gsl/**', 'external/clapack/**', 'external/zlib/**', 'external/num/**', 'external/portaudio/*.h', 'external/flac/*.h', 'external/mp3/*.h', 'external/espeak/*.h', 'external/whispercpp/*.h', 'external/vorbis/*.h', 'external/opusfile/*.h') }}
+
+      - name: Set up Emscripten
+        if: steps.wasm-cache.outputs.cache-hit != 'true'
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.10
+          actions-cache-folder: emsdk-cache
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build Praat to WebAssembly
+        if: steps.wasm-cache.outputs.cache-hit != 'true'
+        run: make -C web/wasm -j"$(nproc)"
+
+      - name: Test the WebAssembly module
+        run: node --test web/test/*.test.mjs
+
+      - name: Stamp the service worker with the commit
+        run: sed -i "s/const VERSION = 'dev';/const VERSION = '${GITHUB_SHA::12}';/" web/public/sw.js
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/public
+
+  deploy:
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/claude/brave-pascal-1f9q7q'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

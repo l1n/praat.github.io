@@ -1,0 +1,4 @@
+# WebAssembly build products (rebuilt by `make -C web/wasm` and in CI)
+wasm/build/
+wasm/build.log
+public/wasm/
