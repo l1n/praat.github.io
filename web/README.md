@@ -68,7 +68,7 @@ Microphone access needs `localhost` or HTTPS.
 ## Deployment
 
 `.github/workflows/voice-trainer.yml` builds and tests on every pull request, and on pushes to `master` it
-deploys `web/public` to GitHub Pages. In the repository settings, set **Pages → Build and deployment → Source**
+deploys `web/public` to GitHub Pages. The compiled WebAssembly module is cached, keyed on Praat's sources, `web/wasm` and the Emscripten version, so pushes that only change the front end skip the compile. In the repository settings, set **Pages → Build and deployment → Source**
 to **GitHub Actions**. Because the repository is named `praat.github.io` (not `l1n.github.io`), the site is served
 at `https://l1n.github.io/praat.github.io/`. All paths in the app are relative, so it also works at a domain root
 or in any subfolder.

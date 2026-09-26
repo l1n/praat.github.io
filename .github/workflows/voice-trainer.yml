@@ -24,7 +24,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # The WebAssembly module only changes when Praat's sources, the wasm build files or the
+      # Emscripten version change. Front-end-only pushes reuse the cached module and skip the
+      # ~6 minute compile. (The header-only directories are hashed because praat_web.cpp and the
+      # libraries include from them.)
+      - name: Restore the WebAssembly module
+        id: wasm-cache
+        uses: actions/cache@v4
+        with:
+          path: web/public/wasm
+          key: praat-wasm-emsdk-6.0.10-${{ hashFiles('web/wasm/**', 'melder/**', 'kar/**', 'sys/**', 'dwsys/**', 'stat/**', 'fon/**', 'LPC/**', 'dwtools/**', 'foned/**', 'EEG/**', 'external/gsl/**', 'external/clapack/**', 'external/zlib/**', 'external/num/**', 'external/portaudio/*.h', 'external/flac/*.h', 'external/mp3/*.h', 'external/espeak/*.h', 'external/whispercpp/*.h', 'external/vorbis/*.h', 'external/opusfile/*.h') }}
+
       - name: Set up Emscripten
+        if: steps.wasm-cache.outputs.cache-hit != 'true'
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: 6.0.10
@@ -36,6 +48,7 @@ jobs:
           node-version: 22
 
       - name: Build Praat to WebAssembly
+        if: steps.wasm-cache.outputs.cache-hit != 'true'
         run: make -C web/wasm -j"$(nproc)"
 
       - name: Test the WebAssembly module
