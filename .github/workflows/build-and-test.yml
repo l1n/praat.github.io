@@ -3,8 +3,18 @@ name: Build and Test
 on:
   push:
     branches: [ "master" ]
+    paths-ignore:
+      # The in-browser voice trainer has its own workflow (voice-trainer.yml);
+      # changes that only touch it don't need a desktop build.
+      - "web/**"
+      - ".github/workflows/voice-trainer.yml"
+      - ".github/workflows/build-and-test.yml"
   pull_request:
     branches: [ "master" ]
+    paths-ignore:
+      - "web/**"
+      - ".github/workflows/voice-trainer.yml"
+      - ".github/workflows/build-and-test.yml"
 
 jobs:
   build:

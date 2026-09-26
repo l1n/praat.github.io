@@ -436,6 +436,7 @@ export class VowelChart extends CanvasChart {
     super(container);
     this.trail = []; // { t, f1, f2 }
     this.showReference = { lower: true, higher: true };
+    this.voiceCloud = null; // [[f1, f2], ...] of a reference voice chosen by the user
     this.canvas.addEventListener('pointermove', (e) => this.hover(e));
     this.canvas.addEventListener('pointerleave', () => this.hideTooltip());
   }
@@ -526,6 +527,23 @@ export class VowelChart extends CanvasChart {
         ctx.font = `11px ${T.font}`;
       }
     };
+    // The user's reference voice, as a faint cloud of small hollow diamonds behind everything else.
+    if (this.voiceCloud?.length) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(L.left, L.top, w - L.left - L.right, H - L.top - L.bottom);
+      ctx.clip();
+      ctx.strokeStyle = T.s7;
+      ctx.globalAlpha = 0.45;
+      ctx.lineWidth = 1.2;
+      for (const [f1, f2] of this.voiceCloud) {
+        const xx = L.x(f2), yy = L.y(f1);
+        ctx.beginPath();
+        ctx.moveTo(xx, yy - 3.5); ctx.lineTo(xx + 3.5, yy); ctx.lineTo(xx, yy + 3.5); ctx.lineTo(xx - 3.5, yy); ctx.closePath();
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
     if (this.showReference.lower) drawRef('lower', T.s2, 'square');
     if (this.showReference.higher) drawRef('higher', T.s3, 'circle');
 

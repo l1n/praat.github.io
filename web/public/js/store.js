@@ -122,6 +122,7 @@ export const DEFAULT_SETTINGS = {
   theme: 'auto',
   deviceId: '',
   onboarded: false,
+  reference: null, // a voice chosen as target in Analyze: { title, median, formants, points, ... }
 };
 
 export function loadSettings() {

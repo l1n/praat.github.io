@@ -7,8 +7,11 @@ import { noteName, stats, pitchSdSemitones } from '../music.js';
 import * as audio from '../audio.js';
 import * as praat from '../praat-client.js';
 import { saveSession, listSessions, getAudio } from '../store.js';
+import { offerTarget } from '../target.js';
 
 export default function analyzeView(root, { param }) {
+  // #/analyze/target comes from Settings: the user wants to derive a target from a recording.
+  const findingTarget = param === 'target';
   let chart = null;
   let current = null; // { samples, sampleRate, title, result, sessionId }
   let selection = null;
@@ -44,7 +47,12 @@ export default function analyzeView(root, { param }) {
     drop.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) openFile(f); });
 
     const recentList = h('div', { class: 'session-list' }, h('span', { class: 'loading' }, h('span', { class: 'spinner' }), 'Loading…'));
+    const targetTip = h('div', { class: 'callout' }, icon('target'),
+      h('span', {}, h('b', {}, findingTarget ? 'Find a target from a recording. ' : 'Have a voice you’d like to aim for? '),
+        'Open or record a clip of it (a minute of natural speech works well), select the part with that voice if there’s more than one speaker, and press ',
+        h('b', {}, 'Use as target'), '. It suggests a pitch range and keeps that voice’s vowels on your resonance chart.'));
     body.replaceChildren(
+      targetTip,
       h('div', { class: 'card' }, drop),
       h('div', { class: 'card' },
         h('div', { class: 'card-head' }, h('h2', {}, 'Saved recordings'), h('span', { class: 'hint' }, 'From your exercises and analyses')),
@@ -128,6 +136,18 @@ export default function analyzeView(root, { param }) {
     const saveBtn = h('button', { class: 'btn small', onclick: save, disabled: !!current.sessionId }, icon('save'), current.sessionId ? 'Saved' : 'Save');
     const wavBtn = h('button', { class: 'btn small ghost', onclick: () => download(audio.encodeWav(current.samples, current.sampleRate), `${title.replace(/[^\w\- ]+/g, '').trim() || 'recording'}.wav`) }, icon('download'), 'WAV');
     const newBtn = h('button', { class: 'btn small ghost', onclick: showStart }, 'New');
+    const targetBtn = h('button', {
+      class: `btn small${findingTarget ? ' primary' : ''}`,
+      title: 'Suggest a target pitch range from this recording (or the selection)',
+      onclick: async () => {
+        if (await offerTarget(result, selection, title)) {
+          chart.target = target();
+          chart.dirty = true;
+          chart.draw();
+          updateSummary();
+        }
+      },
+    }, icon('target'), 'Use as target');
     const selInfo = h('span', {}, 'Drag across the chart to select a part; click to play from a point. Pinch or ctrl + scroll to zoom.');
 
     const chartBox = h('div', { class: 'analysis-chart' });
@@ -140,7 +160,7 @@ export default function analyzeView(root, { param }) {
           h('div', { class: 'stack', style: { gap: '2px', minWidth: 0 } },
             h('h2', {}, title),
             h('span', { class: 'hint' }, `${formatDuration(result.duration)} · ${current.sampleRate} Hz · analysed in ${(result.elapsedMs / 1000).toFixed(1)} s`)),
-          h('div', { class: 'row' }, playBtn, saveBtn, wavBtn, newBtn)),
+          h('div', { class: 'row' }, playBtn, targetBtn, saveBtn, wavBtn, newBtn)),
         h('div', { class: 'row spread', style: { marginBottom: '8px' } },
           h('div', { class: 'legend' },
             h('span', {}, h('i', { class: 'line', style: { background: 'var(--series-1)' } }), 'pitch'),
@@ -303,7 +323,7 @@ export default function analyzeView(root, { param }) {
     const p = state.pendingAnalysis;
     state.pendingAnalysis = null;
     load(p);
-  } else if (param) {
+  } else if (param && !findingTarget) {
     listSessions().then((all) => {
       const s = all.find((x) => x.id === param);
       if (s?.hasAudio) openSession(s);

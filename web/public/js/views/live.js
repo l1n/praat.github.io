@@ -7,6 +7,7 @@ import { noteName, centsOff, stats, pitchSdSemitones } from '../music.js';
 import * as audio from '../audio.js';
 import * as praat from '../praat-client.js';
 import { saveSession } from '../store.js';
+import { referenceVoice } from '../target.js';
 
 export default function liveView(root, { navigate }) {
   const s = state.settings;
@@ -69,7 +70,10 @@ export default function liveView(root, { navigate }) {
     h('div', { class: 'legend', style: { marginBottom: '8px' } },
       h('span', {}, h('i', { style: { background: 'var(--series-1)' } }), 'you'),
       h('span', {}, h('i', { style: { background: 'var(--series-3)' } }), 'higher-resonance average'),
-      h('span', {}, h('i', { class: 'sq', style: { background: 'var(--series-2)' } }), 'lower-resonance average')),
+      h('span', {}, h('i', { class: 'sq', style: { background: 'var(--series-2)' } }), 'lower-resonance average'),
+      referenceVoice()?.points?.length
+        ? h('span', {}, h('i', { style: { background: 'transparent', border: '1.5px solid var(--series-7)', borderRadius: '2px', transform: 'rotate(45deg) scale(0.8)' } }), `your reference: “${referenceVoice().title}”`)
+        : null),
     vowelBox,
     h('div', { class: 'formant-values', style: { marginTop: '12px' } }, fTiles));
 
@@ -92,6 +96,7 @@ export default function liveView(root, { navigate }) {
   chart.showNotes = s.showNotes;
   chart.draw();
   const vowel = new VowelChart(vowelBox);
+  vowel.voiceCloud = referenceVoice()?.points || null;
 
   // ---------- session accumulation
   let session = newSession();

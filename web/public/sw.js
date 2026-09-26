@@ -6,7 +6,7 @@ const CACHE = `tessitura-${VERSION}`;
 const CORE = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icons/icon.svg',
   'js/app.js', 'js/ui.js', 'js/state.js', 'js/store.js', 'js/music.js', 'js/charts.js', 'js/audio.js',
-  'js/praat-client.js', 'js/praat-worker.js', 'js/capture-worklet.js',
+  'js/praat-client.js', 'js/praat-worker.js', 'js/capture-worklet.js', 'js/target.js',
   'js/views/live.js', 'js/views/practice.js', 'js/views/analyze.js', 'js/views/progress.js', 'js/views/settings.js',
   'wasm/praat.mjs', 'wasm/praat.wasm',
 ];

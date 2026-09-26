@@ -6,8 +6,9 @@ import { TARGET_PRESETS, DEFAULT_SETTINGS, clearAll } from '../store.js';
 import { RangeStrip } from '../charts.js';
 import { noteName } from '../music.js';
 import * as audio from '../audio.js';
+import { referenceVoice, clearReference } from '../target.js';
 
-export default function settingsView(root) {
+export default function settingsView(root, { navigate }) {
   const s = state.settings;
   root.append(h('div', { class: 'view-head' }, h('div', {}, h('h1', {}, 'Settings'), h('p', {}, 'Saved in this browser.'))));
 
@@ -25,6 +26,16 @@ export default function settingsView(root) {
     },
   }, h('b', {}, p.label), h('span', {}, p.id === 'custom' ? p.note : `${p.low}–${p.high} Hz · ${p.note}`)));
 
+  // A target derived from a recording (see target.js); without one, this button starts that flow in Analyze.
+  const ref = referenceVoice();
+  const recordingButton = h('button', {
+    class: 'preset', type: 'button', 'aria-pressed': String(state.settings.targetPreset === 'recording'),
+    onclick: () => (ref ? setTarget(ref.low, ref.high, 'recording') : navigate('analyze/target')),
+  }, h('b', {}, 'From a recording'),
+  h('span', {}, ref ? `${ref.low}–${ref.high} Hz · from “${ref.title}”` : 'Pick a voice to aim for and let Praat suggest a range'));
+  presetButtons.push(recordingButton);
+  const presetIds = [...TARGET_PRESETS.map((p) => p.id), 'recording'];
+
   function setTarget(low, high, preset) {
     low = Math.round(low);
     high = Math.round(high);
@@ -40,7 +51,7 @@ export default function settingsView(root) {
     lowNote.textContent = noteName(low);
     highNote.textContent = noteName(high);
     strip.set(low, high);
-    presetButtons.forEach((b, i) => b.setAttribute('aria-pressed', String(TARGET_PRESETS[i].id === preset)));
+    presetButtons.forEach((b, i) => b.setAttribute('aria-pressed', String(presetIds[i] === preset)));
   }
   const onRangeInput = () => setTarget(+lowInput.value, +highInput.value, 'custom');
   lowInput.addEventListener('change', onRangeInput);
@@ -54,7 +65,20 @@ export default function settingsView(root) {
       h('label', { class: 'field' }, h('span', {}, 'Bottom (Hz)'), lowInput, lowNote),
       h('label', { class: 'field' }, h('span', {}, 'Top (Hz)'), highInput, highNote)),
     stripBox,
+    referenceBlock(),
     h('p', { class: 'small muted' }, 'Average speaking pitch overlaps a lot between people, and pitch is only one part of how a voice is perceived: resonance, intonation and articulation matter as much. Choose a range that feels comfortable and sustainable.'));
+
+  function referenceBlock() {
+    if (!ref) return null;
+    const fmt = (v) => (Number.isFinite(v) ? v.toFixed(0) : '–');
+    return h('div', { class: 'callout' }, icon('target'),
+      h('div', { class: 'stack', style: { gap: '6px', flex: 1 } },
+        h('span', {}, h('b', {}, 'Reference voice: '), `“${ref.title}”, median ${fmt(ref.median)} Hz (${noteName(ref.median)}), formants ${ref.formants.map(fmt).join(' · ')} Hz.`,
+          ref.points?.length ? ' Its vowels appear on the resonance chart in Live.' : ''),
+        h('div', { class: 'row' },
+          h('button', { class: 'btn small', onclick: () => navigate('analyze/target') }, 'Choose another recording'),
+          h('button', { class: 'btn small ghost danger', onclick: () => { clearReference(); navigate('settings'); } }, 'Remove'))));
+  }
 
   // ---------------------------------------------------------------- analysis
   const floorInput = h('input', { type: 'number', min: 40, max: 200, step: 5, value: s.pitchFloor, onchange: (e) => {
