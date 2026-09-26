@@ -3,7 +3,7 @@
 An in-browser voice training app built on [Praat](https://www.praat.org)'s analysis code, compiled to WebAssembly.
 Nothing is uploaded: the microphone signal, the analysis and all saved sessions stay on the user's device.
 
-**Live site:** https://l1n.github.io/praat.github.io/ (published by `.github/workflows/voice-trainer.yml` on every push to `master`)
+**Live site:** https://l1n.github.io/praat.github.io/ (published by `.github/workflows/voice-trainer.yml` on every push to `master` or `claude/brave-pascal-1f9q7q`)
 
 ## What it does
 

@@ -3,11 +3,11 @@ name: Voice trainer (web)
 # Builds Praat's analysis core to WebAssembly, tests it, and publishes the
 # in-browser voice trainer in web/ to GitHub Pages.
 
+# Every push is built and tested (the result also shows on any open pull request).
+# Pushes to master and to the development branch below are deployed; the
+# github-pages environment must allow both branches (Settings → Environments).
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
   workflow_dispatch:
 
 permissions:
@@ -50,7 +50,7 @@ jobs:
           path: web/public
 
   deploy:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/claude/brave-pascal-1f9q7q'
     needs: build
     runs-on: ubuntu-latest
     permissions:
